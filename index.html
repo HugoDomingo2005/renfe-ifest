@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Renfe iFest Prototype Final</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --renfe-purple: #6c3a9e;
+            --renfe-light-purple: #865bb4;
+            --renfe-yellow: #fdb913;
+            --text-dark: #3b2a66;
+            --bg-white: #f9f9fb;
+            --success-green: #d4f8e2;
+            --success-text: #1b5e20;
+            --error-red: #ffebee;
+            --error-text: #c62828;
+        }
+
+        body { margin: 0; background-color: #1a1a1a; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+
+        .phone { width: 360px; height: 740px; background: #000; border-radius: 50px; padding: 12px; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 4px solid #333; }
+        .screen { width: 100%; height: 100%; background: var(--bg-white); border-radius: 38px; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+
+        header { background: var(--renfe-purple); color: white; padding: 30px 20px 15px; position: relative; }
+        .status-bar { display: flex; justify-content: flex-end; font-size: 10px; gap: 5px; margin-bottom: 10px; opacity: 0.8; }
+        .header-main { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-style: italic; font-weight: bold; font-size: 20px; }
+        
+        .points { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 12px; display: flex; align-items: center; cursor: pointer; transition: background 0.2s; }
+        .mg { background: var(--renfe-yellow); color: white; padding: 2px 4px; border-radius: 4px; font-size: 8px; margin-right: 5px; font-weight: bold; }
+        
+        .promo-bar { font-size: 10px; text-align: center; margin-top: 15px; opacity: 0.9; }
+        .progress-container { background: rgba(255,255,255,0.3); height: 4px; border-radius: 10px; margin-top: 8px; }
+        .progress-fill { background: var(--renfe-yellow); width: 45%; height: 100%; border-radius: 10px; }
+
+        main { padding: 20px; flex: 1; overflow-y: auto; }
+        .welcome h1 { margin: 0; font-size: 22px; color: var(--text-dark); }
+        .welcome p { margin: 0; color: #8e8e93; font-size: 14px; }
+        .journey-card { background: var(--renfe-light-purple); color: white; padding: 15px; border-radius: 15px; margin: 15px 0; }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .card { background: var(--renfe-light-purple); color: white; padding: 15px; border-radius: 18px; cursor: pointer; display: flex; flex-direction: column; min-height: 140px; border: none; }
+        .card i { font-size: 22px; margin-bottom: 10px; }
+        .card h3 { font-size: 13px; margin: 0; text-align: left; }
+        .card p { font-size: 10px; margin: 5px 0 0; opacity: 0.8; text-align: left; }
+        .pts-tag { background: var(--renfe-yellow); color: var(--text-dark); padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; align-self: flex-end; margin-top: auto; }
+
+        .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; z-index: 100; flex-direction: column; justify-content: flex-end; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: white; border-top-left-radius: 30px; border-top-right-radius: 30px; padding: 25px 20px; max-height: 85%; overflow-y: auto; position: relative; animation: slideUp 0.3s ease-out; }
+
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .close-x { position: absolute; top: 20px; right: 20px; width: 30px; height: 30px; background: #f0edff; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; color: var(--renfe-purple); font-weight: bold; z-index: 101; }
+        .handle { width: 40px; height: 4px; background: #ddd; border-radius: 10px; margin: -10px auto 20px; }
+
+        .quiz-box { background: #f0edff; border-radius: 15px; padding: 15px; margin-bottom: 15px; }
+        .ans-btn { width: 100%; background: white; border: 1px solid #eee; padding: 12px; border-radius: 10px; margin-bottom: 8px; text-align: left; font-size: 13px; cursor: pointer; }
+        .ans-btn.correct { background: var(--success-green); border-color: #4CAF50; color: var(--success-text); font-weight: bold; }
+        .ans-btn.wrong { background: var(--error-red); border-color: #f44336; color: var(--error-text); }
+        .btn-purple { background: var(--renfe-light-purple); color: white; border: none; width: 100%; padding: 12px; border-radius: 12px; margin-bottom: 8px; font-size: 13px; font-weight: bold; }
+
+        nav { background: white; border-top: 1px solid #eee; display: flex; justify-content: space-around; padding: 12px; font-size: 10px; color: #b0a8c5; }
+    </style>
+</head>
+<body>
+
+<div class="phone">
+    <div class="screen">
+        <header>
+            <div class="status-bar">●●● WiFi 100%</div>
+            <div class="header-main">
+                <div class="logo">renfe</div>
+                <div class="points" onclick="openM('modal-punts')">
+                    <span class="mg">MG</span> <span id="mainPts">1.250</span> Punts
+                </div>
+            </div>
+            <div class="promo-bar">Et falten 20 punts per un 10% de descompte en el teu pròxim bitllet!</div>
+            <div class="progress-container"><div class="progress-fill"></div></div>
+        </header>
+
+        <main>
+            <div class="welcome">
+                <h1>El Meu Viatge</h1>
+                <p>Benvingut a bord</p>
+            </div>
+            <div class="journey-card">
+                <div style="font-size:10px; opacity:0.8">El teu trajecte:</div>
+                <div style="font-weight:bold">Girona – Barcelona (38 min)</div>
+            </div>
+
+            <div class="grid">
+                <div class="card" onclick="openM('gaming')">
+                    <i class="fas fa-gamepad"></i>
+                    <h3>Gaming Zone</h3>
+                    <p>Tria el teu joc per a aquest trajecte</p>
+                </div>
+                <div class="card" onclick="openM('sabies')">
+                    <i class="fas fa-book"></i>
+                    <h3>Sabies que?</h3>
+                    <p>Curiositats del teu trajecte</p>
+                </div>
+                <div class="card" onclick="openM('reptes')">
+                    <i class="fas fa-trophy" style="color:var(--renfe-yellow)"></i>
+                    <h3>Reptes Setmanals</h3>
+                    <div class="pts-tag">+50 pts</div>
+                </div>
+                <div class="card" onclick="openM('learning')">
+                    <i class="fas fa-graduation-cap"></i>
+                    <h3>Micro-Learning</h3>
+                    <p>Sessions breus d'italià</p>
+                </div>
+            </div>
+        </main>
+
+        <nav>
+            <div style="color:var(--renfe-purple); text-align:center;"><i class="fas fa-home" style="display:block; font-size:18px;"></i>Inici</div>
+            <div style="text-align:center;"><i class="far fa-clock" style="display:block; font-size:18px;"></i>Jocs</div>
+            <div style="text-align:center;"><i class="fas fa-wallet" style="display:block; font-size:18px;"></i>Wallet</div>
+            <div style="text-align:center;"><i class="fas fa-bars" style="display:block; font-size:18px;"></i>Més</div>
+        </nav>
+
+        <!-- MODAL PUNTS -->
+        <div class="modal-overlay" id="modal-punts" onclick="closeIfOutside(event)">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="close-x" onclick="closeM()">✕</div>
+                <div class="handle"></div>
+                <h3>Els teus Punts</h3>
+                <div style="background: #f8f7ff; border-radius: 20px; padding: 20px; text-align: center; border: 1px solid #eee;">
+                    <div class="mg" style="display:inline-block; padding: 5px 10px; font-size: 12px;">Mas de Guanyar</div>
+                    <div style="font-size: 32px; font-weight: bold; color: var(--renfe-purple); margin: 10px 0;" id="detailPts">1.250</div>
+                    <div style="background:#eee; height:8px; border-radius:10px; margin-top:15px;"><div style="background: var(--renfe-yellow); height: 100%; width: 90%;"></div></div>
+                    <p style="font-size:11px; color:#888; margin-top:10px">Et falten 20 punts per al següent val.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL SABIES QUE? (image_f03364.png) -->
+        <div class="modal-overlay" id="sabies" onclick="closeIfOutside(event)">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="close-x" onclick="closeM()">✕</div>
+                <div class="handle"></div>
+                <h3>📖 Sabies que?</h3>
+                <p style="font-size:12px; color:#888; margin-bottom:15px">Curiositats del teu trajecte en temps real</p>
+                <div style="background: #f0f4ff; padding: 15px; border-radius: 15px; margin-bottom: 10px;">
+                    <div style="color: #ff5e5e; font-size: 10px; font-weight: bold;">📍 ARA PASSEM PER...</div>
+                    <h4 style="margin: 5px 0;">El Viaducte de Mollet del Vallès</h4>
+                    <p style="font-size: 11px; color: #555; line-height: 1.4;">
+                        Construït el 1958, té 312 metres de longitud i és una de les infraestructures ferroviàries més antigues d'aquest tram de la línia.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL MICRO-LEARNING (image_f03326.png) -->
+        <div class="modal-overlay" id="learning" onclick="closeIfOutside(event)">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="close-x" onclick="closeM()">✕</div>
+                <div class="handle"></div>
+                <h3>🎓 Micro-Learning</h3>
+                <p style="font-size:12px; color:#888; margin-bottom:15px">Sessions breus adaptades al trajecte</p>
+                <div class="quiz-box">
+                    <div style="font-size: 10px; color: #865bb4; font-weight: bold;">ITALIÀ · LLIÇÓ 3 DE 5</div>
+                    <h4 style="font-size: 18px; margin: 10px 0 2px;">Dove si trova la stazione?</h4>
+                    <p style="font-size: 12px; color: #8e8e93; margin-bottom: 15px;">Tria la traducció correcta:</p>
+                    <button class="ans-btn" onclick="win(this, '✓ On és l\'estació? — Molt bé! +15 pts', 15)">On és l'estació?</button>
+                    <button class="ans-btn" onclick="this.classList.add('wrong')">A quina hora surt el tren?</button>
+                    <button class="ans-btn" onclick="this.classList.add('wrong')">On puc comprar un bitllet?</button>
+                    <button class="ans-btn" onclick="this.classList.add('wrong')">Quant costa el viatge?</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL GAMING -->
+        <div class="modal-overlay" id="gaming" onclick="closeIfOutside(event)">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="close-x" onclick="closeM()">✕</div>
+                <div class="handle"></div>
+                <h3>🎮 Gaming Zone</h3>
+                <div class="quiz-box">
+                    <div style="font-size: 10px; color: #865bb4; font-weight: bold; margin-bottom: 5px;">QUIZ DEL DIA</div>
+                    <h4>Quin any es va inaugurar l'AVE Madrid–Barcelona?</h4>
+                    <button class="ans-btn" onclick="this.classList.add('wrong')">2005</button>
+                    <button class="ans-btn" onclick="win(this, '✓ 2008 — Correcte!', 10)">2008</button>
+                    <button class="ans-btn" onclick="this.classList.add('wrong')">2010</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL REPTES -->
+        <div class="modal-overlay" id="reptes" onclick="closeIfOutside(event)">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="close-x" onclick="closeM()">✕</div>
+                <div class="handle"></div>
+                <h3>🏆 Reptes Setmanals</h3>
+                <div style="background: #f8f7ff; padding: 12px; border-radius: 15px; margin-bottom: 10px;">
+                    <h4 style="margin:0; font-size:12px;">Completa 3 viatges aquesta setmana</h4>
+                    <div style="background:#e0daff; height:6px; border-radius:10px; margin:8px 0;"><div style="background: var(--renfe-purple); height: 100%; width: 66%;"></div></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function openM(id) { document.getElementById(id).classList.add('active'); }
+    function closeM() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active')); }
+    function closeIfOutside(event) { if (event.target.classList.contains('modal-overlay')) closeM(); }
+
+    function win(btn, text, pts) {
+        btn.classList.add('correct');
+        btn.innerHTML = text;
+        let current = parseInt(document.getElementById('mainPts').innerText.replace('.',''));
+        let nuevo = current + pts;
+        document.getElementById('mainPts').innerText = nuevo.toLocaleString('es-ES');
+        if(document.getElementById('detailPts')) document.getElementById('detailPts').innerText = nuevo.toLocaleString('es-ES');
+        setTimeout(closeM, 1200);
+    }
+</script>
+
+</body>
+</html>
